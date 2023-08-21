@@ -36,11 +36,13 @@ if [ -f "/tmp/${eths}.lpta" ]; then
 else
     rm -f /tmp/*.lpta
     echo "Указываем адрес ${eths}"
-    ${biniptables} -t nat -v -L OUTPUT -n --line-number | grep -w ${comment} | grep -w tcp | awk '{system ("${biniptables} -t nat -D OUTPUT " $1)}'
-    ${biniptables} -t nat -A OUTPUT -m addrtype --src-type LOCAL --dst-type LOCAL -p tcp -m multiport --dport ${PORTSS} -j DNAT --to-destination ${eths} -m comment --comment "${comment}"
+#    ${biniptables} -t nat -v -L OUTPUT -n --line-number | grep -w ${comment} | grep -w tcp | awk '{system ("${biniptables} -t nat -D OUTPUT " $1)}'
+    "${biniptables}" -t nat -v -L OUTPUT -n --line-number | tac | grep -w ${comment} | grep -w tcp | awk '{system("'"${biniptables}"' -t nat -D OUTPUT " $1)}'
+    "${biniptables}" -t nat -A OUTPUT -m addrtype --src-type LOCAL --dst-type LOCAL -p tcp -m multiport --dport ${PORTSS} -j DNAT --to-destination ${eths} -m comment --comment "${comment}"
 sleep 2
-    ${biniptables} -t nat -v -L OUTPUT -n --line-number | grep -w ${comment} | grep -w udp | awk '{system ("${biniptables} -t nat -D OUTPUT " $1)}'
-    ${biniptables} -t nat -A OUTPUT -m addrtype --src-type LOCAL --dst-type LOCAL -p udp -m multiport --dport ${PORTSS} -j DNAT --to-destination ${eths} -m comment --comment "${comment}"
+#    ${biniptables} -t nat -v -L OUTPUT -n --line-number | grep -w ${comment} | grep -w udp | awk '{system ("${biniptables} -t nat -D OUTPUT " $1)}'
+    "${biniptables}" -t nat -v -L OUTPUT -n --line-number | tac | grep -w ${comment} | grep -w udp | awk '{system("'"${biniptables}"' -t nat -D OUTPUT " $1)}'
+    "${biniptables}" -t nat -A OUTPUT -m addrtype --src-type LOCAL --dst-type LOCAL -p udp -m multiport --dport ${PORTSS} -j DNAT --to-destination ${eths} -m comment --comment "${comment}"
 
     touch /tmp/${eths}.lpta
 fi
@@ -53,10 +55,11 @@ else
 # https://serverfault.com/questions/247623/iptables-redirect-local-connections-to-remote-system-port
 # (which works only in kernels >= 3.6)
 # https://superuser.com/questions/661772/iptables-redirect-to-localhost
-    ${binsysctl} -w net.ipv4.conf.all.route_localnet=1
-    ${binsysctl} -w net.ipv4.ip_forward=1
-    ${biniptables} -t nat -v -L POSTROUTING -n --line-number | grep -w ${comment} | awk '{system ("${biniptables} -t nat -D POSTROUTING " $1)}'
-    ${biniptables} -t nat -A POSTROUTING -m addrtype --src-type LOCAL --dst-type UNICAST -j MASQUERADE -m comment --comment "${comment}"
+    "${binsysctl}" -w net.ipv4.conf.all.route_localnet=1
+    "${binsysctl}" -w net.ipv4.ip_forward=1
+#    "${biniptables}" -t nat -v -L POSTROUTING -n --line-number | grep -w ${comment} | awk '{system ("${biniptables} -t nat -D POSTROUTING " $1)}'
+    "${biniptables}" -t nat -v -L POSTROUTING -n --line-number | tac | grep -w ${comment} | awk '{system("'"${biniptables}"' -t nat -D OUTPUT " $1)}'
+    "${biniptables}" -t nat -A POSTROUTING -m addrtype --src-type LOCAL --dst-type UNICAST -j MASQUERADE -m comment --comment "${comment}"
     echo ----------
 fi
 

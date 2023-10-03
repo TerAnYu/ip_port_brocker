@@ -44,10 +44,8 @@ if [ -f "${tmpdir}/${eths}.lpta" ]; then
 else
     rm -f ${tmpdir}/*.lpta
     echo "Указываем адрес ${eths}"
-    "${biniptables}" -t nat -v -L OUTPUT -n --line-number | tac | grep -w "${comment}" | grep -w tcp | awk '{system("'"${biniptables}"' -t nat -D OUTPUT " $1)}'
+    "${biniptables}" -t nat -v -L OUTPUT -n --line-number | tac | grep -w "${comment}" | awk '{system("'"${biniptables}"' -t nat -D OUTPUT " $1)}'
     "${biniptables}" -t nat -A OUTPUT -m addrtype --src-type LOCAL --dst-type LOCAL -p tcp -m multiport --dport ${PORTSS} -j DNAT --to-destination ${eths} -m comment --comment "${comment}"
-sleep 2
-    "${biniptables}" -t nat -v -L OUTPUT -n --line-number | tac | grep -w "${comment}" | grep -w udp | awk '{system("'"${biniptables}"' -t nat -D OUTPUT " $1)}'
     "${biniptables}" -t nat -A OUTPUT -m addrtype --src-type LOCAL --dst-type LOCAL -p udp -m multiport --dport ${PORTSS} -j DNAT --to-destination ${eths} -m comment --comment "${comment}"
 
     touch ${tmpdir}/${eths}.lpta

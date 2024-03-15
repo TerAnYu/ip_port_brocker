@@ -23,8 +23,5 @@ binsysctl=/sbin/sysctl
 tmpdir=/tmp/iptpb
 
 # Destinations
-contr1="10.150.100.10"
-contr2="10.150.100.11"
-contr3="10.150.102.10"
-contr4="10.150.102.11"
+controllers=("10.150.100.10" "10.150.100.11" "10.150.100.12" "10.150.100.13")
 eths=""

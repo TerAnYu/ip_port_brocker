@@ -11,16 +11,21 @@ set PATH=/usr/sbin:/sbin:/usr/bin:/bin
 source "$(dirname $0)/change_dc_conf.sh"
 
 # создание TEMPFS для локфайла
-if [ ! -d "${tmpdir}" ]; then
-    echo "Путь ${tmpdir} не существует, создаю."
-    mkdir ${tmpdir}
+if [ ! -d "${tmpdir}" ] || ! df -T "${tmpdir}" | grep -q "tmpfs"; then
+
+    if [ -e "${tmpdir}" ]; then
+        rm -rf ${tmpdir}
+        echo "${tmpdir} удалён"
+    fi
+
+    echo "Путь ${tmpdir} не существует или не является tmpfs, создаю и подключаю"
+    mkdir -p ${tmpdir}
     chmod 777 ${tmpdir}
-    mount -t tmpfs -o size=5M tmpfs ${tmpdir}
+    mount -t tmpfs -o size=1M tmpfs ${tmpdir}
 fi
 
 ######################################
 # https://devidiom.blog/2015/12/03/simple-bash-server-check-script/
-controllers=("$contr1" "$contr2" "$contr3" "$contr4")
 # проверка доступности порта
 for controller in "${controllers[@]}"; do
     if `nc -z -w 5 "${controller}" "${CPORT}"`; then
@@ -44,9 +49,9 @@ if [ -f "${tmpdir}/${eths}.lpta" ]; then
 else
     rm -f ${tmpdir}/*.lpta
     echo "Указываем адрес ${eths}"
-    "${biniptables}" -t nat -v -L OUTPUT -n --line-number | tac | grep -w "${comment}" | awk '{system("'"${biniptables}"' -t nat -D OUTPUT " $1)}'
-    "${biniptables}" -t nat -A OUTPUT -m addrtype --src-type LOCAL --dst-type LOCAL -p tcp -m multiport --dport ${PORTSS} -j DNAT --to-destination ${eths} -m comment --comment "${comment}"
-    "${biniptables}" -t nat -A OUTPUT -m addrtype --src-type LOCAL --dst-type LOCAL -p udp -m multiport --dport ${PORTSS} -j DNAT --to-destination ${eths} -m comment --comment "${comment}"
+    "${biniptables}" -t nat -v -L OUTPUT -n --line-number | tac | grep -w ${comment} | awk '{system("'"${biniptables}"' -t nat -D OUTPUT " $1)}'
+    "${biniptables}" -t nat -A OUTPUT -m addrtype --src-type LOCAL --dst-type LOCAL -p tcp -m multiport --dport ${PORTSS} -j DNAT --to-destination ${eths} -m comment --comment ${comment}
+    "${biniptables}" -t nat -A OUTPUT -m addrtype --src-type LOCAL --dst-type LOCAL -p udp -m multiport --dport ${PORTSS} -j DNAT --to-destination ${eths} -m comment --comment ${comment}
 
     touch ${tmpdir}/${eths}.lpta
 fi
@@ -61,8 +66,8 @@ else
 # https://superuser.com/questions/661772/iptables-redirect-to-localhost
     "${binsysctl}" -w net.ipv4.conf.all.route_localnet=1
     "${binsysctl}" -w net.ipv4.ip_forward=1
-    "${biniptables}" -t nat -v -L POSTROUTING -n --line-number | tac | grep -w "${comment}" | awk '{system("'"${biniptables}"' -t nat -D OUTPUT " $1)}'
-    "${biniptables}" -t nat -A POSTROUTING -m addrtype --src-type LOCAL --dst-type UNICAST -j MASQUERADE -m comment --comment "${comment}"
+    "${biniptables}" -t nat -v -L POSTROUTING -n --line-number | tac | grep -w ${comment} | awk '{system("'"${biniptables}"' -t nat -D OUTPUT " $1)}'
+    "${biniptables}" -t nat -A POSTROUTING -m addrtype --src-type LOCAL --dst-type UNICAST -j MASQUERADE -m comment --comment ${comment}
     echo ----------
 fi
 
